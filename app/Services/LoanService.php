@@ -39,11 +39,14 @@ class LoanService
 
     protected function calculateFlatSchedule(Loan $loan, $principal, $annualRate, $periods): void
     {
+        $graceMonths = $loan->grace_period_months ?? 0;
         $totalInterest = ($principal * $annualRate * ($periods / 12)) / 100;
-        $totalPayable = $principal + $totalInterest;
-        $installmentAmount = $totalPayable / $periods;
         $interestPerPeriod = $totalInterest / $periods;
-        $principalPerPeriod = $principal / $periods;
+        
+        $repaymentPeriods = $periods - $graceMonths;
+        $principalPerPeriod = $repaymentPeriods > 0 ? $principal / $repaymentPeriods : 0;
+
+        $totalPayable = $principal + $totalInterest;
 
         $loan->update([
             'total_interest' => $totalInterest,
@@ -51,16 +54,22 @@ class LoanService
         ]);
 
         $dueDate = Carbon::parse($loan->disbursed_at ?? now())->addMonth();
+        $runningBalance = $totalPayable;
 
         for ($i = 1; $i <= $periods; $i++) {
+            $isGrace = $i <= $graceMonths;
+            $p = $isGrace ? 0 : $principalPerPeriod;
+            $total = $p + $interestPerPeriod;
+            $runningBalance -= $total;
+
             RepaymentSchedule::create([
                 'loan_id' => $loan->id,
                 'installment_number' => $i,
                 'due_date' => $dueDate->copy(),
-                'principal_amount' => $principalPerPeriod,
+                'principal_amount' => $p,
                 'interest_amount' => $interestPerPeriod,
-                'total_amount' => $installmentAmount,
-                'balance' => $totalPayable - ($installmentAmount * $i),
+                'total_amount' => $total,
+                'balance' => max(0, $runningBalance),
                 'status' => 'pending',
             ]);
             $dueDate->addMonth();
@@ -69,28 +78,44 @@ class LoanService
 
     protected function calculateDecliningSchedule(Loan $loan, $principal, $monthlyRate, $periods): void
     {
-        // Amortization Formula: P * [r(1+r)^n] / [(1+r)^n - 1]
-        if ($monthlyRate > 0) {
-            $installmentAmount = $principal * ($monthlyRate * pow(1 + $monthlyRate, $periods)) / (pow(1 + $monthlyRate, $periods) - 1);
+        $graceMonths = $loan->grace_period_months ?? 0;
+        $repaymentPeriods = $periods - $graceMonths;
+
+        // Amortization Formula for the repayment part
+        if ($monthlyRate > 0 && $repaymentPeriods > 0) {
+            $repaymentInstallment = $principal * ($monthlyRate * pow(1 + $monthlyRate, $repaymentPeriods)) / (pow(1 + $monthlyRate, $repaymentPeriods) - 1);
+        } elseif ($repaymentPeriods > 0) {
+            $repaymentInstallment = $principal / $repaymentPeriods;
         } else {
-            $installmentAmount = $principal / $periods;
+            $repaymentInstallment = 0;
         }
 
-        $totalPayable = $installmentAmount * $periods;
-        $totalInterest = $totalPayable - $principal;
+        $graceInterest = $principal * $monthlyRate;
+        
+        $totalInterest = ($graceInterest * $graceMonths) + (($repaymentInstallment * $repaymentPeriods) - $principal);
+        $totalPayable = $principal + $totalInterest;
 
         $loan->update([
             'total_interest' => $totalInterest,
             'total_payable' => $totalPayable,
         ]);
 
-        $currentBalance = $principal;
+        $currentPrincipalBalance = $principal;
         $dueDate = Carbon::parse($loan->disbursed_at ?? now())->addMonth();
 
         for ($i = 1; $i <= $periods; $i++) {
-            $interestForPeriod = $currentBalance * $monthlyRate;
-            $principalForPeriod = $installmentAmount - $interestForPeriod;
-            $currentBalance -= $principalForPeriod;
+            $isGrace = $i <= $graceMonths;
+            
+            if ($isGrace) {
+                $interestForPeriod = $principal * $monthlyRate;
+                $principalForPeriod = 0;
+                $installmentAmount = $interestForPeriod;
+            } else {
+                $interestForPeriod = $currentPrincipalBalance * $monthlyRate;
+                $principalForPeriod = $repaymentInstallment - $interestForPeriod;
+                $installmentAmount = $repaymentInstallment;
+                $currentPrincipalBalance -= $principalForPeriod;
+            }
 
             RepaymentSchedule::create([
                 'loan_id' => $loan->id,
@@ -99,12 +124,12 @@ class LoanService
                 'principal_amount' => $principalForPeriod,
                 'interest_amount' => $interestForPeriod,
                 'total_amount' => $installmentAmount,
-                'balance' => max(0, $currentBalance),
+                'balance' => max(0, $currentPrincipalBalance), // Note: using principal balance here or remaining payable?
                 'status' => 'pending',
             ]);
             $dueDate->addMonth();
         }
-    /**
+    }/**
      * Apply a payment to the loan repayment schedule.
      */
     public function applyPayment(\App\Models\Payment $payment): void

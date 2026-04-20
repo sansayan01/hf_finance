@@ -85,10 +85,16 @@ class LoanProductForm
                         \Filament\Forms\Components\TextInput::make('late_penalty_value')
                             ->numeric()
                             ->required(),
-                        \Filament\Forms\Components\TextInput::make('grace_period_days')
+                        \Filament\Forms\Components\TextInput::make('penalty_grace_days')
                             ->numeric()
                             ->default(0)
-                            ->required(),
+                            ->label('Penalty Grace Days')
+                            ->helperText('Days after due date before penalty is applied'),
+                        \Filament\Forms\Components\TextInput::make('grace_period_months')
+                            ->numeric()
+                            ->default(0)
+                            ->label('Grace Period (Months)')
+                            ->helperText('Number of initial months where borrower pays interest only'),
                     ]),
 
                 \Filament\Forms\Components\Section::make('Requirements & Status')

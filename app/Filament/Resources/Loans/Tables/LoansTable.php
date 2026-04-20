@@ -102,6 +102,46 @@ class LoansTable
                                 ->success()
                                 ->send();
                         }),
+                    \Filament\Tables\Actions\Action::make('recordPayment')
+                        ->label('Record Payment')
+                        ->icon('heroicon-o-credit-card')
+                        ->color('success')
+                        ->visible(fn ($record) => in_array($record->status, ['disbursed', 'active', 'overdue']))
+                        ->form([
+                            \Filament\Forms\Components\TextInput::make('amount')
+                                ->numeric()
+                                ->required()
+                                ->prefix('$'),
+                            \Filament\Forms\Components\Select::make('payment_method')
+                                ->options([
+                                    'cash' => 'Cash',
+                                    'bank_transfer' => 'Bank Transfer',
+                                    'mobile_money' => 'Mobile Money',
+                                ])
+                                ->required(),
+                            \Filament\Forms\Components\DatePicker::make('payment_date')
+                                ->default(now())
+                                ->required(),
+                            \Filament\Forms\Components\TextInput::make('reference_number'),
+                        ])
+                        ->action(function ($record, array $data) {
+                            $payment = \App\Models\Payment::create([
+                                'loan_id' => $record->id,
+                                'amount' => $data['amount'],
+                                'payment_method' => $data['payment_method'],
+                                'payment_date' => $data['payment_date'],
+                                'reference_number' => $data['reference_number'] ?? null,
+                                'received_by' => auth()->id(),
+                                'receipt_number' => 'RCP-' . strtoupper(uniqid()),
+                            ]);
+
+                            app(\App\Services\LoanService::class)->applyPayment($payment);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Payment Recorded')
+                                ->success()
+                                ->send();
+                        }),
                     \Filament\Tables\Actions\DeleteAction::make(),
                 ]),
             ])

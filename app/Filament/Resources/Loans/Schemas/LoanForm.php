@@ -30,6 +30,9 @@ class LoanForm
                                     $set('interest_type', $product->interest_type);
                                     $set('tenure_months', $product->max_tenure_months);
                                     $set('repayment_frequency', $product->repayment_frequency);
+                                    $set('grace_period_months', $product->grace_period_months);
+                                    $set('penalty_type', $product->late_penalty_type);
+                                    $set('penalty_amount', $product->late_penalty_value);
                                 }
                             }),
                         \Filament\Forms\Components\TextInput::make('loan_number')
@@ -76,6 +79,17 @@ class LoanForm
                                 'daily' => 'Daily',
                             ])
                             ->required(),
+                        \Filament\Forms\Components\TextInput::make('grace_period_months')
+                            ->numeric()
+                            ->default(0),
+                        \Filament\Forms\Components\Select::make('penalty_type')
+                            ->options([
+                                'fixed' => 'Fixed',
+                                'percentage' => 'Percentage',
+                            ]),
+                        \Filament\Forms\Components\TextInput::make('penalty_amount')
+                            ->numeric()
+                            ->default(0),
                     ]),
 
                 \Filament\Forms\Components\Section::make('Collateral & Purpose')
