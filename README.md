@@ -1,58 +1,97 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="https://ui-avatars.com/api/?name=HF&color=7F9CF5&background=EBF4FF&size=150&rounded=true" alt="HF Finance Logo">
 </p>
 
-## About Laravel
+# 🏦 HF Finance - Next-Gen Loan Management SaaS
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+An enterprise-grade, multi-tenant Loan Management Software (LMS) built with **Laravel 11** and **Filament v3**. 
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+HF Finance is designed to allow multiple financial organizations (Microfinance, Cooperatives, Private Lenders) to manage their entire loan lifecycle securely in a single instance with complete data isolation.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20.svg?style=flat&logo=laravel)
+![Filament](https://img.shields.io/badge/Filament-3.x-FBBF24.svg?style=flat&logo=filament)
+![PHP](https://img.shields.io/badge/PHP-8.3-777BB4.svg?style=flat&logo=php)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## ✨ Current Architecture & Features
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 🛡️ Enterprise Foundation
+*   **Total Multi-Tenancy**: Single-database multi-tenancy using Eloquent Global Scopes. Every record automatically maps to the user's `organization_id`.
+*   **Role-Based Access Control (RBAC)**: Powered by Spatie Permission. Distinct roles including `Super Admin`, `Org Admin`, `Loan Officer`, and `Accountant`.
+*   **Full Audit Trails**: Every creation, update, and deletion in the core models (Borrowers, Loans, Products, Payments) is tracked with timestamp and user ID using Spatie Activitylog.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### 💰 Core Financial Engine
+*   **Dynamic Loan Products**: Define `Min/Max Amount`, `Tenure Limits`, `Processing Fees`, and `Late Penalties` (Fixed or Percentage).
+*   **Dual Amortization Algorithms**:
+    *   **Flat Interest**: Simple interest calculated upfront and evenly divided.
+    *   **Declining Balance**: Complex amortization ensuring borrowers pay less interest as principal decreases.
+*   **Intelligent Grace Periods**: Allow "Interest-Only" months where principal repayment is delayed to help borrowers align cash flows.
 
-## Agentic Development
+### ⚡ Operational Automation
+*   **Automated Scheduling**: A strict `LoanService` automatically generates 1-to-N repayment schedules upon Loan Disbursement.
+*   **FIFO Payment Allocation**: Payments are automatically applied to the oldest pending installments, clearing interest before principal.
+*   **Automated Penalty Cron**: A scheduled `PenaltyService` (`php artisan loans:apply-penalties`) calculates grace days and applies late fees securely.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+---
 
-```bash
-composer require laravel/boost --dev
+## 🚀 Advanced Roadmap (Scaffolded & In-Progress)
 
-php artisan boost:install
-```
+We are actively building the foundation to integrate massive Fintech APIs and Web3 logic into the platform:
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+1.  **🤝 P2P & Syndicated Lending**: (Scaffolded: `Investors` and `Investments` tables). Allowing external capital to fund fractional shares of a loan.
+2.  **💼 Broker Commission Engine**: (Scaffolded: `Brokers` and `Commissions` tables). Tracking third-party loan originators and auto-calculating their percentage payouts.
+3.  **🎮 Borrower Gamification**: (Scaffolded: `trust_points`). A loyalty system where borrowers earn points for early payments to unlock lower future interest rates.
+4.  **🏦 Cloud Accounting Sync**: Upcoming 2-way sync with Xero & QuickBooks for real-time journal entries.
+5.  **💬 Conversational AI Collections**: Upcoming integrations with WhatsApp/Twilio for self-service balances and payment links.
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🛠️ Local Setup Instructions
 
-## Code of Conduct
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/sansayan01/hf_finance.git
+   cd hf_finance
+   ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+2. **Install Dependencies**
+   ```bash
+   composer install
+   npm install && npm run build
+   ```
 
-## Security Vulnerabilities
+3. **Environment Setup**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+   *Note: Update `.env` to use your preferred database (MySQL/SQLite).*
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+4. **Migrate & Seed the Database**
+   ```bash
+   php artisan migrate:fresh --seed
+   ```
+   *The seeder will create the core Roles, a Demo Organization, and dummy Borrowers/Loans.*
 
-## License
+5. **Start the Application**
+   ```bash
+   php artisan serve
+   ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 🔑 Demo Credentials
+
+Once the server is running, navigate to `http://127.0.0.1:8000/admin`.
+
+*   **Super Admin** (Full view across all Orgs)
+    *   **Email**: `super@hffinance.com`
+    *   **Password**: `password`
+*   **Demo Organization Admin** (Restricted to their Org)
+    *   **Email**: `admin@demofinance.com`
+    *   **Password**: `password`
+
+---
+
+## 📄 License
+
+The HF Finance application is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
